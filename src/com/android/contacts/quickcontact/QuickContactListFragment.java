@@ -131,6 +131,10 @@ public class QuickContactListFragment extends Fragment {
                 final ImageView alternateActionButton1 = (ImageView) resultView.findViewById(
                         R.id.third_action_button);
                 final View alternateActionDivider = resultView.findViewById(R.id.vertical_divider);
+                final View primaryIndicator =
+                        actionsContainer.findViewById(R.id.primary_indicator);
+                final View securityIndicator =
+                        actionsContainer.findViewById(R.id.security_indicator);
                 final ImageView presenceIconView =
                         (ImageView) resultView.findViewById(R.id.presence_icon);
 
@@ -163,6 +167,16 @@ public class QuickContactListFragment extends Fragment {
                 alternateActionButton1.setContentDescription(action.get2AlternateIconDescription());
                 alternateActionButton1.setVisibility(hasAlternateAction1
                                 && isVTSupported() ? View.VISIBLE : View.GONE);
+
+                // Set the default contact method
+                if (primaryIndicator != null) {
+                    primaryIndicator.setVisibility(action.isPrimary() ? View.VISIBLE : View.GONE);
+                }
+
+                // Show secure contact method
+                if (securityIndicator != null) {
+                    securityIndicator.setVisibility(action.isSecure() ? View.VISIBLE : View.GONE);
+                }
 
                 if (mimeType.equals(Phone.CONTENT_ITEM_TYPE)) {
                     // Force LTR text direction for phone numbers

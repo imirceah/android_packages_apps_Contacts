@@ -19,11 +19,7 @@ package com.android.contacts.detail;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.SearchManager;
-import android.content.ComponentName;
-import android.content.ContentUris;
-import android.content.ContentValues;
-import android.content.Context;
-import android.content.Intent;
+import android.content.*;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.net.ParseException;
@@ -593,6 +589,9 @@ public class ContactDetailFragment extends Fragment implements FragmentKeyListen
                         smsIntent = new Intent(Intent.ACTION_SENDTO,
                                 Uri.fromParts(CallUtil.SCHEME_SMSTO, entry.data, null));
                         smsIntent.setComponent(smsComponent);
+                        if (ContactDetailDisplayUtils.hasActiveSession(getActivity(), entry.data)) {
+                            entry.mIsSecureCommunication = true;
+                        }
                     }
 
                     //add for csvt
@@ -1265,6 +1264,7 @@ public class ContactDetailFragment extends Fragment implements FragmentKeyListen
         public int chatCapability = 0;
 
         private boolean mIsInSubSection = false;
+        private boolean mIsSecureCommunication = false;
 
         @Override
         public String toString() {
@@ -1287,6 +1287,7 @@ public class ContactDetailFragment extends Fragment implements FragmentKeyListen
                     .add("presence", presence)
                     .add("chatCapability", chatCapability)
                     .add("mIsInSubSection", mIsInSubSection)
+                    .add("mIsSecureCommunication", mIsSecureCommunication)
                     .toString();
         }
 
@@ -1486,6 +1487,7 @@ public class ContactDetailFragment extends Fragment implements FragmentKeyListen
         public final View secondaryActionDivider;
         public final View thirdActionDivider;
         public final View primaryIndicator;
+        public final View securityIndicator;
 
         public DetailViewCache(View view,
                 OnClickListener primaryActionClickListener,
@@ -1494,6 +1496,7 @@ public class ContactDetailFragment extends Fragment implements FragmentKeyListen
             type = (TextView) view.findViewById(R.id.type);
             data = (TextView) view.findViewById(R.id.data);
             primaryIndicator = view.findViewById(R.id.primary_indicator);
+            securityIndicator = view.findViewById(R.id.security_indicator);
             presenceIcon = (ImageView) view.findViewById(R.id.presence_icon);
 
             actionsViewContainer = view.findViewById(R.id.actions_view_container);
@@ -1755,6 +1758,10 @@ public class ContactDetailFragment extends Fragment implements FragmentKeyListen
 
             // Set the default contact method
             views.primaryIndicator.setVisibility(entry.isPrimary ? View.VISIBLE : View.GONE);
+
+            // Show secure contact method
+            views.securityIndicator.setVisibility(
+                    entry.mIsSecureCommunication ? View.VISIBLE : View.GONE);
 
             // Set the presence icon
             final Drawable presenceIcon = ContactPresenceIconUtil.getPresenceIcon(
@@ -2032,8 +2039,10 @@ public class ContactDetailFragment extends Fragment implements FragmentKeyListen
                     ContextMenu.NONE, getString(R.string.set_default));
             }
         if (Phone.CONTENT_ITEM_TYPE.equals(selectedMimeType)) {
+            final boolean isIPPrefixEnabled =
+                    SystemProperties.getBoolean("persist.radio.ipcall.enabled", false);
             // add limit length to show IP call item
-            if (selectedEntry.data.length() > MAX_NUM_LENGTH) {
+            if (isIPPrefixEnabled && selectedEntry.data.length() > MAX_NUM_LENGTH) {
                 if (MoreContactUtils.isMultiSimEnable(mContext, MSimConstants.SUB1)) {
                     String sub1Name = MoreContactUtils.getMultiSimAliasesName(
                             mContext, MSimConstants.SUB1);
